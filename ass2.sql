@@ -80,10 +80,27 @@ by each customer for their travel. Print their username and total costs in Euros
 /*
 Print the usernames of customers who have travelled on all lines
  */
-/* TODO */
+SELECT * FROM (
+  SELECT username, COUNT(1) as lineCount FROM (
+    SELECT username, l.lineID FROM customer
+    INNER JOIN journey j on customer.customerID = j.customerID
+    INNER JOIN station s on j.endStationID = s.stationID
+    INNER JOIN line l on s.lineID = l.lineID
+
+    UNION
+
+    SELECT username, l.lineID  FROM customer
+    INNER JOIN journey j on customer.customerID = j.customerID
+    INNER JOIN station s on j.startStationID = s.stationID
+    INNER JOIN line l on s.lineID = l.lineID
+  ) AS T_1
+  GROUP BY username
+) AS T_2 WHERE lineCount = (SELECT COUNT(*) FROM line);
 
 /*
-For each journey, show its journey ID
+For each journey, show its journey ID and how many stations it passed
+through (count the end station but not the start station). Order results by the
+number of stations the journey passed through, from most to least.
  */
 /* TODO */
 
