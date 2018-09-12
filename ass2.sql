@@ -1,7 +1,9 @@
 /* How many stations are on each line? For each line print
 the name of the line and the number of stations on it
  */
-SELECT lineID, COUNT(1) as stationCount FROM station GROUP BY lineID;
+SELECT lineName, COUNT(1) as stationCount FROM station
+  INNER JOIN line l on station.lineID = l.lineID
+  GROUP BY l.lineID;
 
 /*
 For each customer print their username and how many journeys they have made
@@ -16,15 +18,15 @@ Order results alphabetically by name.
 SELECT stationName, lineName FROM station INNER JOIN line
   ON station.lineID = line.lineID
   WHERE stationName LIKE '%plein'
-  ORDER BY stationName ASC;
+  ORDER BY lineName ASC;
 
 /* Which customer has spent the most time travelling on the Metro?
 Print their username and total travel time in hours, minutes and seconds.
  */
- SELECT username, SEC_TO_TIME((endTime-startTime)) AS spentTime FROM journey
+ SELECT username, SEC_TO_TIME(SUM(TIMESTAMPDIFF(SECOND, startTime, endTime))) AS spentTime FROM journey
  INNER JOIN customer ON customer.customerID = journey.customerID
- ORDER BY spentTime DESC
- LIMIT 1;
+ GROUP BY username
+ ORDER BY spentTime DESC LIMIT 1;
 
  /* Print the usernames of customers who travel on concession (i.e. faretype=0)
     and took a journey in January 2018.
@@ -57,9 +59,7 @@ SELECT journeyID, startStationName, startLineName, endStationName, endLineName F
     INNER JOIN line l
       ON l.lineID = s.lineID)
     AS R_1
-
   NATURAL JOIN
-
   (SELECT journeyID, endTime, stationName as endStationName, lineName as endLineName
     FROM journey
     INNER JOIN station s
@@ -68,7 +68,9 @@ SELECT journeyID, startStationName, startLineName, endStationName, endLineName F
       ON s.lineID = l.lineID)
     AS R_2
 
-) WHERE TIMESTAMPDIFF(SECOND, startTime, endTime) > 12*60;
+) WHERE TIMESTAMPDIFF(MINUTE, startTime, endTime) > 12;
+
+
 
 /*
 To travel in 1 zone costs €3, 2 zones €5, 3 zones €8.
@@ -80,7 +82,7 @@ by each customer for their travel. Print their username and total costs in Euros
 /*
 Print the usernames of customers who have travelled on all lines
  */
-SELECT * FROM (
+SELECT username FROM (
   SELECT username, COUNT(1) as lineCount FROM (
     SELECT username, l.lineID FROM customer
     INNER JOIN journey j on customer.customerID = j.customerID
@@ -106,3 +108,10 @@ number of stations the journey passed through, from most to least.
 
 
 
+
+SELECT username, MAX(totalTravelTime) as totalTravelTime FROM (
+SELECT username,
+		TIMEDIFF(endTime, startTime) AS totalTravelTime
+FROM journey NATURAL JOIN customer) AS T
+group by username
+order by totalTravelTime;
